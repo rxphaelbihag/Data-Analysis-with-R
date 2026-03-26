@@ -1,0 +1,144 @@
+---
+title: "Seasonal Plots"
+author: "Raphael Bihag"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    latex_engine: xelatex
+---
+
+## Part 1: Loading Libraries
+
+Create a chunk named setup, load necessary libraries
+
+```{r setup}
+library(forecast)
+library(tseries)
+library(ggplot2)
+library(urca)
+library(TSA)
+library(fpp3)
+library(dplyr)
+```
+
+## Import Dataset - GDP and unemployment rate
+
+Data Info: A quarterly data (1985Q2 - 2009Q3) with 98 observations on the following 2 variables
+
+g – percentage change in U.S. Gross Domestic Product (seasonally adjusted)
+
+u – U.S. Civilian Unemployment Rate (seasonally adjusted)
+
+
+```{r importdata}
+# Import dataset
+okun_data <- read.csv('C:/Users/Mary Grace Bihag/Desktop/Bayot Files/BSDS 1/2BSDS/AMAT 132/okun_data.csv')
+
+# Plot of data
+plot(okun_data$g)
+plot(okun_data$u)
+
+# Step 1. Convert data to time series
+
+help("ts")
+ts_g <- ts(data=okun_data$g, start=c(1985, 2), frequency=4)
+ts_u <- ts(data=okun_data$u, start=c(1985, 2), frequency=4)
+	
+# Step 2. Time Series Plot
+plot(ts_g, main="Quarterly GDP growth rate in US")
+plot(ts_u, main="Quarterly Unemployment rate in US")
+	
+```
+
+## Example 1: AirPassengers Dataset
+
+Data Info: Monthly Airline Passenger Numbers 1949-1960.
+
+The classic Box & Jenkins airline data. Monthly totals of international airline passengers, 1949 to 1960.
+
+```{r graphical summaries}
+# Step 1. Load dataset and time series plot
+data("AirPassengers")
+ap <- AirPassengers
+plot(ap, main="AirPassengers Time Series")
+
+# Step 2. Convert data to a tsibble object
+# The tsibble format is preferred for the fpp3 functions
+ap_tsibble <- ap %>% 
+as_tsibble()
+
+# %>% is the pipe operator, takes the output of one function or operation and passes it as the first argument to the next function in a sequence
+
+# Step 3. Seasonal plot
+ap_tsibble %>% 
+gg_season(value, period = "year") +
+labs(
+  title = "Seasonal Plot: International Airline Passengers",
+  y = "Passengers (thousands)",
+  x = "Month"
+) +
+theme_minimal()
+
+# Step 4. Polar seasonal plot
+ap_tsibble %>% 
+gg_season(value, period = "year", polar=TRUE) +
+labs(
+  title = "Polar Seasonal Plot: International Airline Passengers",
+  y = "Passengers (thousands)",
+  x = "Month"
+) +
+theme_minimal()
+  
+# Step 5. Seasonal subseries plot
+ap_tsibble %>% 
+gg_subseries(value) +
+labs(
+  title = "Seasonal Subseries Plot: International Airline Passengers",
+  y = "Passengers (thousands)",
+  x = "Month"
+) +
+theme_minimal()
+```
+
+
+## Numerical Summaries
+
+```{r numerical summaries}
+# Mean
+mean(ts_g)
+mean(ts_u)
+
+# Median
+median(ts_g)
+median(ts_u)
+
+# Mean Absolute Deviations (MAD)
+mean(abs(ts_g - mean(ts_g)))
+mean(abs(ts_u - mean(ts_u)))
+
+# Variance
+var(ts_g)
+var(ts_u)
+
+# Standard Deviation
+sd(ts_g)
+sd(ts_u)
+
+# Covariance
+cov(ts_g, ts_u)
+
+# Correlation
+cor(ts_g, ts_u)
+
+# Autocorrelation and Correlogram
+acf_values_g <- acf(ts_g, main = "Correlogram of US GDP Growth Rate")
+print(acf_values_g)
+
+acf_values_u <- acf(ts_u, main = "Correlogram of US Unemployment Rate")
+print(acf_values_u)
+
+```
+
+The blue broken lines marks the significance area. In the example of the US GDP Growth Rate, we can interpret it as the previous two quarters have significant influence to the current quarter. Mathematically, $u_t = k_1 u_{t-1} + k_2u_{t-2}$.
+
+As for the US Unemployment Rate, its the same but we can say that the 6 previous quarters influence the current.
