@@ -1,0 +1,80 @@
+---
+title: "Time Series Modeling - Bihag"
+author: "Raphael Bihag"
+date: "`r Sys.Date()`"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+# Time Series Modeling
+
+## Introduction
+
+Enter Short Description hereeee
+
+## Data Wrangling
+
+### Load Required Libraries
+```{r load_packages, message=FALSE, warning=FALSE}
+library(forecast)
+library(tseries)
+library(ggplot2)
+library(urca)
+library(TSA)
+library(dplyr)
+```
+
+### Assess the Data
+The data we will be using for this session is Lake Huron data that is available natively in R. Let's plot it and get its summary.
+
+```{r load_dataset}
+# Loads dataset to a variable
+lakehuron <- LakeHuron
+
+# plots the dataset
+plot(lakehuron, main="Lake Huron Time Series", xlab="Year", ylab="Level (ft)")
+
+# Prints out a few lines of the dataset
+lakehuron
+```
+The output shows that the data is yearly (frequency=1) and ranges from 1875 - 1972. This data is already cleaned and ready for analysis. Before doing our time series modeling, we have to test for the data's stationarity.
+
+### Stationarity Test & Transformation
+We are going to test for the data's stationarity using the Augmented Dickey-Fuller test, which tests the null hypothesis that the data is non-stationary.
+
+```{r stationarity_test}
+adf.test(lakehuron)
+```
+The result of the Augmented Dickey-Fuller test shows that the p-value is 0.254 which is greater than the 5% level of significance. Thus, we fail to reject the null hypothesis; the dataset is non-stationary.
+
+Because the dataset is non-stationary, we perform transformations to it for it to be stationary. For this case, we difference the dataset and check if it becomes stationary.
+
+```{r transformation}
+lakehuron_diff <- diff(lakehuron, lag=1)
+adf.test(lakehuron_diff)
+```
+The data has become stationary after first iteration of differencing. Thus, the correct level of integration for this data is 1. We are now set for analysis.
+
+## Model Identification
+In this section, we perform ACF/PACF to identify the significant lag order for AR and MA components 
+of the models. This step is important because it tells us what $p$ and $q$ are for when modeling $AR(p)$ and $MA(q)$.
+
+```{r ACF_plotting}
+acf(lakehuron_diff, lag.max = 30, main="ACF 1st Differenced Lake Huron")
+pacf(lakehuron_diff, lag.max = 30, main="PACF 1st Differenced Lake Huron")
+```
+
+```{r identify_lag}
+# computes the confidence bound for the dataset
+conf_bound <- 1.96 / sqrt(length(lakehuron_diff))
+
+# stores the acf plot data
+acf_vals <- acf(lakehuron_diff, plot = FALSE, lag.max = 30)
+pacf_vals <- pacf(lakehuron_diff, plot = FALSE, lag.max = 30)
+
+# identi
+sig_acf <- which(abs(acf_vals$acf[-1]) > conf_bound)
+sig_pacf <- which(abs(pacf_vals$acf) > conf_bound)
+```
+
