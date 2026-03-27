@@ -61,8 +61,8 @@ In this section, we perform ACF/PACF to identify the significant lag order for A
 of the models. This step is important because it tells us what $p$ and $q$ are for when modeling $AR(p)$ and $MA(q)$.
 
 ```{r ACF_plotting}
-acf(lakehuron_diff, lag.max = 30, main="ACF 1st Differenced Lake Huron")
-pacf(lakehuron_diff, lag.max = 30, main="PACF 1st Differenced Lake Huron")
+acf(lakehuron_diff, main="ACF Lake Huron (1st Differenced)", lag.max = 30)
+pacf(lakehuron_diff, main="PACF Lake Huron (1st Differenced)", lag.max = 30)
 ```
 
 ```{r identify_lag}
@@ -73,8 +73,91 @@ conf_bound <- 1.96 / sqrt(length(lakehuron_diff))
 acf_vals <- acf(lakehuron_diff, plot = FALSE, lag.max = 30)
 pacf_vals <- pacf(lakehuron_diff, plot = FALSE, lag.max = 30)
 
-# identi
+# identifies which lags are significant from ACF and PACF
 sig_acf <- which(abs(acf_vals$acf[-1]) > conf_bound)
 sig_pacf <- which(abs(pacf_vals$acf) > conf_bound)
+
+cat("Significant lags ACF: ", sig_acf, "\n")
+cat("Significant lags PACF: ", sig_pacf, "\n")
 ```
+The results show that the significant lags from ACF ($q$) are 2 and 8, and that from PACF ($p$) are 2 and 20. With these values, we define our significant lag order for AR and MA components as variables to be used for later. We will also define the order of integration ($d$) as 1 since we differenced the data once to make it stationary.
+
+```{r lag_orders}
+ar_order <- 20
+ma_order <- 8
+d_value <- 1
+```
+
+
+## Model Fitting
+Before fitting our models, we have to split the data into train set and test set at 80-20 ratio.
+
+### Data Splitting
+
+```{r data_split}
+n <- length(lakehuron)
+train_size <- floor(0.8 * n)
+lh_train <- window(lakehuron, end = time(lakehuron)[train_size])
+lh_test <- window(lakehuron, start = time(lakehuron)[train_size + 1])
+
+cat("Lake Huron Split \n")
+cat("> Training Set:", length(lh_train), "obs (", start(lh_train)[1], "-", end(lh_train)[1], ")\n")
+cat("> Test Set:", length(lh_test), "obs (", start(lh_test)[1], "-", end(lh_test)[1], ")\n")
+```
+### Model Fitting
+Next, we autofit an ARIMA model using the AR and MA orders identified. The model is defined as $ARIMA(p, d, q)$ where $p$ is the number of significant lags of PACF, $q$ is the number of significant lags of ACF, and $d$ is the order of integration.
+
+```{r model_fitting}
+# Variable to hold all of the results
+results <- list()
+
+# fitting the AR model
+results$ar <- Arima(lh_train, order = c(ar_order, d_value, 0))
+
+# fitting the MA model
+results$ma <- Arima(lh_train, order = c(0, d_value, ma_order))
+
+# fitting the ARMA model
+results$arma <- Arima(lh_train, order = c(ar_order, d_value, ma_order))
+
+# fitting the auto-ARIMA model
+results$auto <- auto.arima(lh_train)
+```
+
+
+### Forecasting
+We have successfully fitted all our models. Next, let's forecast using these models, which we will use later to evaluate each model's accuracy. The forecast duration must be the same length as the test data.
+
+```{r forecasting}
+forecasts <- list()
+
+# Forecasting using AR
+forecasts$ar <- forecast(results$ar, h = length(lh_test))
+
+# Forecasting using MA
+forecasts$ma <- forecast(results$ma, h = length(lh_test))
+
+# Forecasting using ARMA
+forecasts$arma <- forecast(results$arma, h = length(lh_test))
+
+# Forecasting using auto-ARIMA
+forecasts$auto <- forecast(results$auto, h = length(lh_test))
+```
+
+```{r forecast_plot}
+par(mfrow = c(2,2))
+plot(forecasts$ar, main= "AR", ylim=range(lakehuron))
+lines(lh_test,col= "red")
+
+plot(forecasts$ma, main= "MA", ylim=range(lakehuron))
+lines(lh_test,col= "red")
+
+plot(forecasts$arma, main= "ARMA", ylim=range(lakehuron))
+lines(lh_test,col= "red")
+
+plot(forecasts$auto, main= "Auto-ARIMA", ylim=range(lakehuron))
+lines(lh_test,col= "red")
+```
+
+
 
