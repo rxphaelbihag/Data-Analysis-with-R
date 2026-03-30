@@ -11,7 +11,7 @@ output:
 
 ## Introduction
 
-Enter Short Description hereeee
+This R notebook explores the R built-in dataset Lake Huron, which consists of the annual measurements of the level, in feet, of Lake Huron 1875--1972. This shows how to perform the 5 parts of Time Series Analysis, from data wrangling to modeling to analysis.
 
 ## Data Wrangling
 
@@ -57,8 +57,7 @@ adf.test(lakehuron_diff)
 The data has become stationary after first iteration of differencing. Thus, the correct level of integration for this data is 1. We are now set for analysis.
 
 ## Model Identification
-In this section, we perform ACF/PACF to identify the significant lag order for AR and MA components 
-of the models. This step is important because it tells us what $p$ and $q$ are for when modeling $AR(p)$ and $MA(q)$.
+In this section, we perform ACF/PACF to identify the significant lag order for AR and MA components of the models. This step is important because it tells us what $p$ and $q$ are for when modeling $AR(p)$ and $MA(q)$.
 
 ```{r ACF_plotting}
 acf(lakehuron_diff, main="ACF Lake Huron (1st Differenced)", lag.max = 30)
@@ -80,11 +79,11 @@ sig_pacf <- which(abs(pacf_vals$acf) > conf_bound)
 cat("Significant lags ACF: ", sig_acf, "\n")
 cat("Significant lags PACF: ", sig_pacf, "\n")
 ```
-The results show that the significant lags from ACF ($q$) are 2 and 8, and that from PACF ($p$) are 2 and 20. With these values, we define our significant lag order for AR and MA components as variables to be used for later. We will also define the order of integration ($d$) as 1 since we differenced the data once to make it stationary.
+The results show that the significant lags from ACF ($q$) are 2 and 8, and that from PACF ($p$) are 2 and 20. With these values, we define our significant lag order for AR and MA components as variables to be used for later `ar_order <- 2` and `ma_order <- 2`. We will also define the order of integration ($d$) as 1 since we differenced the data once to make it stationary.
 
 ```{r lag_orders}
-ar_order <- 20
-ma_order <- 8
+ar_order <- 2
+ma_order <- 2
 d_value <- 1
 ```
 
@@ -95,11 +94,14 @@ Before fitting our models, we have to split the data into train set and test set
 ### Data Splitting
 
 ```{r data_split}
-n <- length(lakehuron)
-train_size <- floor(0.8 * n)
+n <- length(lakehuron)  # holds the length of the dataset
+train_size <- floor(0.8 * n)  # defines how many obs for the train size
+
+# Data splitting
 lh_train <- window(lakehuron, end = time(lakehuron)[train_size])
 lh_test <- window(lakehuron, start = time(lakehuron)[train_size + 1])
 
+# Output
 cat("Lake Huron Split \n")
 cat("> Training Set:", length(lh_train), "obs (", start(lh_train)[1], "-", end(lh_train)[1], ")\n")
 cat("> Test Set:", length(lh_test), "obs (", start(lh_test)[1], "-", end(lh_test)[1], ")\n")
@@ -158,6 +160,26 @@ lines(lh_test,col= "red")
 plot(forecasts$auto, main= "Auto-ARIMA", ylim=range(lakehuron))
 lines(lh_test,col= "red")
 ```
+These are the performances of the time series models. Plotted in black is the historical (train) data; in red is the test part of the historical data; and in blue is the forecast. For further analyis, we look at the Akaike Information Criterion (AIC) of each model to assess the best fit.
 
+### AIC Values
+```{r aic_values}
+# To store all the AIC values
+aic_values <- c(
+  ar   = results$ar$aic,
+  ma   = results$ma$aic,
+  arma = results$arma$aic,
+  auto = results$auto$aic
+)
 
+# Get the model with the least AIC
+min_val   <- min(aic_values)
+best_name <- names(which.min(aic_values))
+
+cat("Least AIC:", best_name, " - ", min_val)
+```
+
+```{r bestfit_summary}
+summary(results$arma)
+```
 
