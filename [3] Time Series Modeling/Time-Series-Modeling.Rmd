@@ -221,10 +221,15 @@ The `summary` function shows that the equation of the ARMA model is given by,
 $$ \Delta \hat{y}_t = 0.7286 \Delta y_{t-1} - 0.2702 \Delta y_{t-2} + \epsilon_t - 0.6148 \epsilon_{t-1} - 0.1366 \epsilon_{t-2}$$
 
 The coefficients of this model can be interpreted as follows:
-* The change in level from a year ago increases the current year's change in level by 72.86%.
-* The change in level from two years ago decreases the current year's change in level by 27.02%.
-* The change in shocks from last year decreases the current year's change in shocks by 61.48%.
-* The change in shocks from two years ago decreases the current year's change in shocks by 13.66%.
+
+1. The change in level from a year ago increases the current year's change in level by 72.86%.
+
+2. The change in level from two years ago decreases the current year's change in level by 27.02%.
+
+3. The change in shocks from last year decreases the current year's change in shocks by 61.48%.
+
+4. The change in shocks from two years ago decreases the current year's change in shocks by 13.66%.
+
 
 The diagnostic test revealed the normality of the residuals, which suggests good model specification---there is no autocorrelation in the data up to the specified number of lags, and the series behaves like white noise.
 
