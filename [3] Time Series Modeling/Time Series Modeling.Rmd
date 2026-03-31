@@ -186,22 +186,42 @@ Among the time series models, the ARMA model is found to have the least AIC, wit
 summary(results$arma)
 ```
 ## Forecast Visualization and Diagnostic Checking
+The best fit model is ARMA. Below is the forecast visualization of it.
 
 ```{r forecast_plot}
-plot(forecasts$arma, main= "ARMA", xlab = "Time", ylab = "Value", col = "blue", lwd="2")
+plot(forecasts$arma, main= "Lake Huron - ARMA Forecast", xlab = "Time", ylab = "Value", col = "blue", lwd="2")
 lines(lh_test,col= "red", lwd = 2)
 legend("topleft", legend = c("Forecast", "Actual"),
 col = c("blue", "red"), lty = c(1, 1), lwd = c(2, 2))
 ```
+For diagnostics, we are going to perform the Ljung-Box test to check for normality of the residuals. This test is required to be performed to assess if the model has correctly fitted the data with the right amount of lags. This is to test the null hypothesis $H_0$ that the residuals are independently/normally distributed against the alternative $H_a$ that the residuals are not independently distributed (the model has failed to capture some underlying pattern).
 
+```{r ljungbox}
+model_residuals <- residuals(results$arma) 
+lb_test <- Box.test(model_residuals)
+print(lb_test)
+```
 
-
+The test shows a p-value=0.9822, which is greater than the level of significant of 5%. Thus, we have insufficient evidence to reject the null hypothesis---the residuals are normally distributed. 
 
 ## Summary of Results and Discussion
 
 The plot of the Lake Huron data shows a visible trend and seasonality. The trend and seasonality components are found to be profound which resulted to the data being non-stationary. This non-stationary behavior of the data is confirmed by the ADF test, which resulted to p-value=0.254, leading to fail to reject the null hypothesis. Because of this, first-order differencing was found to be sufficient to make the data stationary.
 
-From the ACF and PACF plots, the significant lag order for each model was identified. The ACF plot found the lag order $q=2$, and the PACF plot found the lag order $p=2$. Although there are two significant lags from each of the plots, the least lags are chosen as 
+From the ACF and PACF plots, the significant lag order for each model was identified. The ACF plot found the lag order $q=2$, and the PACF plot found the lag order $p=2$. Although there are two significant lags from each of the plots, the least lags are chosen as the greater ones might come from some errors or noise and could make the model too complex.
+
+Upon fitting the four time series models to the lag orders, the best fitted model based on the least AIC is found to be the ARMA model `ARIMA(2,1,2)`.
 
 The `summary` function shows that the equation of the ARMA model is given by,
 $$ \Delta \hat{y}_t = 0.7286 \Delta y_{t-1} - 0.2702 \Delta y_{t-2} + \epsilon_t - 0.6148 \epsilon_{t-1} - 0.1366 \epsilon_{t-2}$$
+
+The coefficients of this model can be interpreted as follows:
+- The change in level from a year ago increases the current year's change in level by 72.86%.
+- The change in level from two years ago decreases the current year's change in level by 27.02%.
+- The change in shocks from last year decreases the current year's change in shocks by 61.48%.
+- The change in shocks from two years ago decreases the current year's change in shocks by 13.66%.
+
+The diagnostic test revealed the normality of the residuals, which suggests good model specification---there is no autocorrelation in the data up to the specified number of lags, and the series behaves like white noise.
+
+From the forecast visualization, we can see that most of the actual data are within the forecast bounds of the best fit model. The model was able to **accurately capture the next 2-3 years** but then deviated significantly after that due to the dramatic change in levels the following years.
+
