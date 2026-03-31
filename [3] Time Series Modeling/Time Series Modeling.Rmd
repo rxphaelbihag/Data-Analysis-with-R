@@ -163,6 +163,8 @@ lines(lh_test,col= "red")
 These are the performances of the time series models. Plotted in black is the historical (train) data; in red is the test part of the historical data; and in blue is the forecast. For further analyis, we look at the Akaike Information Criterion (AIC) of each model to assess the best fit.
 
 ### AIC Values
+Akaike Information Criterion (AIC) is a metric for measuring the quality of a statistical model for a given data set, with lower AIC scores indicating better quality models. AIC is a relative estimator, and is useful in comparison with other AIC scores of the same data set.
+
 ```{r aic_values}
 # To store all the AIC values
 aic_values <- c(
@@ -178,8 +180,28 @@ best_name <- names(which.min(aic_values))
 
 cat("Least AIC:", best_name, " - ", min_val)
 ```
+Among the time series models, the ARMA model is found to have the least AIC, with a value of 167.07. We then use the `summary` function to get a closer look at the ARMA model created from our dataset. 
 
 ```{r bestfit_summary}
 summary(results$arma)
 ```
+## Forecast Visualization and Diagnostic Checking
 
+```{r forecast_plot}
+plot(forecasts$arma, main= "ARMA", xlab = "Time", ylab = "Value", col = "blue", lwd="2")
+lines(lh_test,col= "red", lwd = 2)
+legend("topleft", legend = c("Forecast", "Actual"),
+col = c("blue", "red"), lty = c(1, 1), lwd = c(2, 2))
+```
+
+
+
+
+## Summary of Results and Discussion
+
+The plot of the Lake Huron data shows a visible trend and seasonality. The trend and seasonality components are found to be profound which resulted to the data being non-stationary. This non-stationary behavior of the data is confirmed by the ADF test, which resulted to p-value=0.254, leading to fail to reject the null hypothesis. Because of this, first-order differencing was found to be sufficient to make the data stationary.
+
+From the ACF and PACF plots, the significant lag order for each model was identified. The ACF plot found the lag order $q=2$, and the PACF plot found the lag order $p=2$. Although there are two significant lags from each of the plots, the least lags are chosen as 
+
+The `summary` function shows that the equation of the ARMA model is given by,
+$$ \Delta \hat{y}_t = 0.7286 \Delta y_{t-1} - 0.2702 \Delta y_{t-2} + \epsilon_t - 0.6148 \epsilon_{t-1} - 0.1366 \epsilon_{t-2}$$
