@@ -146,7 +146,7 @@ forecasts$arma <- forecast(results$arma, h = length(lh_test))
 forecasts$auto <- forecast(results$auto, h = length(lh_test))
 ```
 
-```{r forecast_plot}
+```{r forecasts_plot}
 par(mfrow = c(2,2))
 plot(forecasts$ar, main= "AR", ylim=range(lakehuron))
 lines(lh_test,col= "red")
